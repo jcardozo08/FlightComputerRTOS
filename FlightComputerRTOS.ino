@@ -175,10 +175,51 @@
   #elif defined(ARDUINO_ARCH_ESP32)
     HardwareSerial LoRa(1);
   #else
-    #include <SoftwareSerial.h>
-    SoftwareSerial LoRa(2, 3);
+    #error "LoRa error on object declaration. Please check your board selection in the config."
   #endif
+  
+#if (LORA_MANAGER)
 
+#if (LORA_FREQUENCY_MODE == 900)
+  #define FREQUENCY_900
+  #define LORA_MAX_CHANNEL 69
+#elif (LORA_FREQUENCY_MODE == 433)
+  #define FREQUENCY_433
+  #define LORA_MAX_CHANNEL 0
+  #error "433Mhz Not implemented yet."
+#else
+  #error "Invalid LoRa Frequency. Use 900 or 433 MHz."
+#endif
+
+#if (LORA_MANAGER_E32 && LORA_MANAGER_E22)
+  #error "Multiple LoRa Managers defined. Define only one of LORA_MANAGER_E32 or LORA_MANAGER_E22."
+#endif
+
+#if (LORA_MANAGER_E32)
+  #include <LoRa_E32.h>
+#elif (LORA_MANAGER_E22)
+  #include <LoRa_E22.h>
+#else
+  #error "No LoRa Manager defined. Define LORA_MANAGER_E32 or LORA_MANAGER_E22."
+#endif
+
+  #include "src/lib/LoRaManager/LoRaManager.h"
+
+  bool changingFrequency = false;
+  unsigned long lastLoraCommandTime = 0;
+  int channel;
+  unsigned long addh;
+  unsigned long addl;
+
+  LoRa_E32 e32Module(
+    &LoRa,
+    AUX_LORA_PIN,
+    M0_LORA_PIN,
+    M1_LORA_PIN
+  );
+
+  LoRaManager loraManager(LoRa);
+#endif
 #endif
 
 //------------------------------ GPS MODE OBJECT ------------------------------//
@@ -1559,7 +1600,71 @@ void createSdFileName() {
 #endif
 #endif
 #endif
+//--------------------------------------------------------- LORA MANAGER FUNCTIONS ---------------------------------------------------------
+#if (LORA_MANAGER)
 
+void verifyLoraCommand() {
+  String command;
+  if ((millis() - lastLoraCommandTime > LORA_COMMAND_TIMEOUT_MS) && changingFrequency) {
+    LoRa.println(LORA_CHANGE_DONE_ERROR_FLIGHT);
+    #if (LORA_RESET_TO_BASE_FREQ_ON_ERROR)
+    loraManager.changeFrequency(LORA_BASE_CHAN, LORA_BASE_ADDH, LORA_BASE_ADDL);
+    #endif
+    changingFrequency = false;
+  }
+
+  if(loraManager.readLine(command)) {
+    processLoraCommand(command);
+  }
+}
+
+void processLoraCommand(const String &message) {
+  if (message.startsWith("MUD4R_FR3Q_PFV.")) {
+    String command = message.substring(String("MUD4R_FR3Q_PFV.").length());
+
+    if (loraManager.decodeCommand(command, channel, addh, addl)) {
+      String requestConfirmationMsg = LORA_CHANGE_REQUEST_CONFIRMATION_FLIGHT;
+
+      String addhHex = String(addh, HEX);
+      String addlHex = String(addl, HEX);
+
+      addhHex.toUpperCase();
+      addlHex.toUpperCase();
+
+      if (addhHex.length() < 2) addhHex = "0" + addhHex;
+      if (addlHex.length() < 2) addlHex = "0" + addlHex;
+
+      requestConfirmationMsg += String(channel);
+      requestConfirmationMsg += "_";
+      requestConfirmationMsg += addhHex;
+      requestConfirmationMsg += addlHex;
+      requestConfirmationMsg += String("#");
+
+      changingFrequency = true;
+    } else {
+      LoRa.println(LORA_CHANGE_DONE_ERROR_FLIGHT);
+      changingFrequency = false;
+    }
+    lastLoraCommandTime = millis();
+  }
+
+  else if (message.startsWith("1SSO_MSM") && changingFrequency) {
+    if (!loraManager.changeFrequency(channel, addh, addl)) {
+      LoRa.println(LORA_CHANGE_DONE_ERROR_FLIGHT);
+      changingFrequency = false;
+    } 
+  }
+
+  else if (message.startsWith(LORA_CHANGE_FINAL_DONE_CONFIRMATION_GS_FLIGHT) && changingFrequency) {
+    LoRa.println(LORA_CHANGE_FINAL_DONE_CONFIRMATION_FC_FLIGHT);
+  }
+
+  else if (message.startsWith(LORA_CHANGE_FINAL_DONE_COMMUNICATION_FC_FLIGHT) && changingFrequency) {
+    changingFrequency = false;
+  }
+}
+
+#endif
 //--------------------------------------------------------- CALIBRATION FUNCTIONS ---------------------------------------------------------
 
 //------------------------------ BAROMETER CALIBRATION ------------------------------//
@@ -2233,6 +2338,13 @@ bool initCommunication() {
 
   digitalWrite(M0_LORA_PIN, LOW);
   digitalWrite(M1_LORA_PIN, LOW);
+
+  #if (LORA_MANAGER)
+      LoRa.setTimeout(500);
+      loraManager.setPrint(true);
+      loraManager.setDebug(false);
+      loraManager.initE32(e32Module);
+  #endif
 
   #if (ESSENTIALS_ONLY_SERIAL_PRINT_MODE || NORMAL_SERIAL_PRINT_MODE)
     Serial.println(F("LoRa initialized"));
@@ -3390,10 +3502,18 @@ void taskCommunication(void *pvParameters) {
     updateSystemStatesFromCommunication();
 #endif
 
+#if (LORA_MANAGER)
+    verifyLoraCommand();
+#endif
 
 #if (LORA_MODE)
     if ((nowMs - lastLoRaOutputMs) >= LORA_OUTPUT_INTERVAL_MS) {
+      #if (LORA_MANAGER)
+        if (!changingFrequency) 
+      #endif
+      {
       LoRa.println(loraDataString);
+      }
       lastLoRaOutputMs = nowMs;
     }
 #endif

@@ -62,8 +62,12 @@
   
   #define LORA_MODE (COMMUNICATION_ON && 0)      // Activate LoRa communication
     #define LORA_ONLY_ESSENTIALS (LORA_MODE && 0) // Switch between only essentials data or all data in LoRa communication
-    #define LORA_MANAGER (LORA_MODE && 0) // Activate LoRa manager for handling LoRa communication and data transmission (Not implemented yet)
-
+    #define LORA_MANAGER (LORA_MODE && 0) // Activate LoRa manager for handling LoRa communication and frequency changes
+      #define LORA_RESET_TO_BASE_FREQ_ON_ERROR (LORA_MANAGER && 1) // Automatically reset to base frequency if there is an error during LoRa frequency change process
+      #define LORA_FREQUENCY_MODE 900 // Set the LoRa frequency mode, based on the physical module (only implemented for 900 MHz yet)
+      #define LORA_MANAGER_E32 1  // Set to 1 if using the E32 LoRa module (Do not change this for now, as the E22 support is not implemented yet)
+      #define LORA_MANAGER_E22 0  // Set 1 if using the E22 LoRa module (Not implemented yet)
+      
   #define GPS_MODE (COMMUNICATION_ON && 0)    // Activate GPS serial communication
     #define GPS_ONLY_ESSENTIALS (GPS_MODE && 0) // Switch between only essentials data or all data in GPS communication
 
@@ -282,9 +286,25 @@
 
 #if (LORA_MODE) 
 #define LORA_BAUD_RATE 9600 // LoRa serial communication baud rate
-#define LORA_FREQUENCY 917 // LoRa frequency in MHz
 #define LORA_OUTPUT_INTERVAL_MS 2000 // LoRa output interval in milliseconds
+
+#if (LORA_MANAGER)
+#define LORA_BASE_CHAN 41 // LoRa frequency in MHz
+#define LORA_BASE_ADDH 0x00 // LoRa address high byte
+#define LORA_BASE_ADDL 0x17 // LoRa address low byte
+#define LORA_CHANGE_TIMEOUT_MS 10000 // Timeout for LoRa frequency change process in milliseconds
+
+#define LORA_CHANGE_REQUEST_FLIGHT "MUD4R_FR3Q_PFV."
+#define LORA_CHANGE_REQUEST_CONFIRMATION_FLIGHT "CTZ_FR3Q."
+#define LORA_CHANGE_REQUEST_FINAL_CONFIRMATION_FLIGHT "1SSO_MSM"
+#define LORA_CHANGE_FINAL_DONE_CONFIRMATION_GS_FLIGHT "MUD0U_MSM"
+#define LORA_CHANGE_FINAL_DONE_CONFIRMATION_FC_FLIGHT "JUR0_JUR4D1NH0"
+#define LORA_CHANGE_FINAL_DONE_COMMUNICATION_FC_FLIGHT "B04"
+#define LORA_CHANGE_DONE_ERROR_FLIGHT "MUD4R_ERRO";
 #endif
+
+#endif
+
 
 #if (GPS_MODE)
 #define GPS_BAUD_RATE 9600 // GPS serial communication baud rate
