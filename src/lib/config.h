@@ -6,9 +6,9 @@
 
 // #define PLACA_MAIN_OCTA_PTH
 // #define PLACA_ESSENTIALS_V1
-// #define PLACA_MAIN_PTH
+#define PLACA_MAIN_PTH
 // #define PLACA_MAIN_SMD
-#define PLACA_MAIN_IC
+// #define PLACA_MAIN_IC
 
 //------------------------------ MAIN SENSORS ------------------------------//
 #define SENSORS_ON 1 // Master switch for all sensors (1 to activate, 0 to deactivate)
@@ -21,10 +21,10 @@
 
 //------------------------------ FILTERS ------------------------------//
 #define BARO_FILTERS (BARO && 1)  // Activate filters for barometer
-  #define KALMAN_MovingAverage_BARO (BARO_FILTERS && 0)   // Switch between Kalman filter (1) or moving average (0) for barometer
+  #define KALMAN_MovingAverage_BARO (BARO_FILTERS && 1)   // Switch between Kalman filter (1) or moving average (0) for barometer
 
 #define ACCEL_FILTERS (ACCEL && 1) // Activate filters for accelerometer
-  #define KALMAN_MovingAverage_ACCEL (ACCEL_FILTERS && 0)   // Switch between Kalman filter (1) or moving average (0) for accelerometer
+  #define KALMAN_MovingAverage_ACCEL (ACCEL_FILTERS && 1)   // Switch between Kalman filter (1) or moving average (0) for accelerometer
 
 #define GYRO_FILTERS (GYRO && 1)  // Activate filters for gyroscope
   #define KALMAN_MovingAverage_GYRO (GYRO_FILTERS && 1)   // Switch between Kalman filter (1) or moving average (0) for gyroscope
@@ -37,10 +37,10 @@
 
 #define AUTO_CALIBRATION_BARO (CALIBRATION_MODE && BARO && 0) // Switch between automatic calibration or normal calibration for barometer (Default is 0)
 
-#define AUTO_CALIBRATION_ACCEL (CALIBRATION_MODE && ACCEL && 1) // Switch between automatic calibration or normal calibration for accelerometer
+#define AUTO_CALIBRATION_ACCEL (CALIBRATION_MODE && ACCEL && 0) // Switch between automatic calibration or normal calibration for accelerometer
 #define ACCEL_FULL_CALIBRATION_MODE (ACCEL && 1) // Switch between full calibration mode (calibrate each axis separately) or simplified calibration mode (calibrate all axes together) for accelerometer
 
-#define AUTO_CALIBRATION_GYRO (CALIBRATION_MODE && GYRO && 1) // Switch between automatic calibration or normal calibration for gyroscope
+#define AUTO_CALIBRATION_GYRO (CALIBRATION_MODE && GYRO && 0) // Switch between automatic calibration or normal calibration for gyroscope
 
 #define AUTO_CALIBRATION_MAG (CALIBRATION_MODE && MAG && 0) // Switch between automatic calibration or normal calibration for magnetometer
 
@@ -56,19 +56,19 @@
 
 //------------------------------ COMMUNICATION ------------------------------//
 #define COMMUNICATION_ON 1 // Master switch for all communication modules (1 to activate, 0 to deactivate)
-  #define SERIAL_PRINT (COMMUNICATION_ON && 0)  // Enable serial output for debugging and monitoring
+  #define SERIAL_PRINT (COMMUNICATION_ON && 1)  // Enable serial output for debugging and monitoring
     #define NORMAL_SERIAL_PRINT_MODE (SERIAL_PRINT && 1) // Switch between normal serial print mode or essentials-only serial print mode
-    #define ESSENTIALS_ONLY_SERIAL_PRINT_MODE (SERIAL_PRINT && 1) // Switch between normal serial print mode or essentials-only serial print mode
+    #define ESSENTIALS_ONLY_SERIAL_PRINT_MODE (SERIAL_PRINT && 0) // Switch between normal serial print mode or essentials-only serial print mode
   
-  #define LORA_MODE (COMMUNICATION_ON && 0)      // Activate LoRa communication
+  #define LORA_MODE (COMMUNICATION_ON && 1)      // Activate LoRa communication
     #define LORA_ONLY_ESSENTIALS (LORA_MODE && 0) // Switch between only essentials data or all data in LoRa communication
-    #define LORA_MANAGER (LORA_MODE && 0) // Activate LoRa manager for handling LoRa communication and frequency changes
+    #define LORA_MANAGER (LORA_MODE && 1) // Activate LoRa manager for handling LoRa communication and frequency changes
       #define LORA_RESET_TO_BASE_FREQ_ON_ERROR (LORA_MANAGER && 1) // Automatically reset to base frequency if there is an error during LoRa frequency change process
       #define LORA_FREQUENCY_MODE 900 // Set the LoRa frequency mode, based on the physical module (only implemented for 900 MHz yet)
       #define LORA_MANAGER_E32 1  // Set to 1 if using the E32 LoRa module (Do not change this for now, as the E22 support is not implemented yet)
       #define LORA_MANAGER_E22 0  // Set 1 if using the E22 LoRa module (Not implemented yet)
       
-  #define GPS_MODE (COMMUNICATION_ON && 0)    // Activate GPS serial communication
+  #define GPS_MODE (COMMUNICATION_ON && 1)    // Activate GPS serial communication
     #define GPS_ONLY_ESSENTIALS (GPS_MODE && 0) // Switch between only essentials data or all data in GPS communication
 
   #define LED_INDICATOR (COMMUNICATION_ON && 0) // Enable LED indicator for system status
@@ -79,9 +79,9 @@
     #define BUZZER_SILENT_PARACHUTE_MODE (BUZZER_INDICATOR && PARACHUTE && 0) // Silent mode for buzzer ignition continuity verification, used in the redundant board without e-matches connected. 
 
 //------------------------------ URD APP INTERFACE ------------------------------//
-#define URD_APP_SERIAL (!SERIAL_PRINT && 1) // Enable serial communication with URD App for real-time telemetry visualization and analysis
+#define URD_APP_SERIAL (!SERIAL_PRINT && 0) // Enable serial communication with URD App for real-time telemetry visualization and analysis
   #define URD_APP_SIMULATION_MODE (URD_APP_SERIAL && 0)    // Activate simulation mode (receive simulated sensor data instead of reading from actual sensors)
-  #define URD_APP_GS_FLIGHT_COMPUTER_SIMULATION_MODE (URD_APP_SERIAL && 1)    // Activate flight computer simulation mode (simulate flight computer behavior and send data to URD App for testing purposes)
+  #define URD_APP_GS_FLIGHT_COMPUTER_SIMULATION_MODE (URD_APP_SERIAL && 0)    // Activate flight computer simulation mode (simulate flight computer behavior and send data to URD App for testing purposes)
 
 //------------------------------ PARACHUTE ------------------------------//
 #define PARACHUTE ((APOGEE_BARO || APOGEE_IMU || URD_APP_SIMULATION_MODE) && 1)      // Parachute deployment based on apogee detection
@@ -103,7 +103,7 @@
   #define EEPROM (STORAGE_MODE && 0)           // Activate EEPROM storage system
   #define SD_LED (STORAGE_MODE && 0)                // Enable LED indicator for storage status
 
-#define FILE_NAME "AIRUMA"  // Prefix for log file names
+#define FILE_NAME "RED"  // Prefix for log file names
 
 //------------------------------ OTHER FUNCTIONS ------------------------------//
 #define VERTICAL_VELOCITY (BARO && 0)  // Vertical velocity calculation based on barometer readings (Not implemented yet)
@@ -123,9 +123,9 @@
 //======================================================= PARAMETERS =================================================
 
 // Flight States Configuration
-#define BOOST_ACCEL_THRESHOLD_MS2 12.0f
+#define BOOST_ACCEL_THRESHOLD_MS2 20.0f
 #define LANDING_STABLE_TIME_MS 10000UL
-#define LANDING_ALTITUDE_WINDOW_M 10.0f
+#define LANDING_ALTITUDE_WINDOW_M 30.0f
 
 // Sensors
 #define SYSTEM_SENSORS_ON (BARO + ACCEL + GYRO + MAG + HUMIDITY + GPS_MODE + STORAGE_MODE)
@@ -315,15 +315,15 @@
 #endif
 
 #if (BUZZER_INDICATOR)
-#define BUZZER_DELAY 5000 // Buzzer indicator delay in ms
+#define BUZZER_DELAY 15000 // Buzzer indicator delay in ms
   #define BUZZER_TASK_FREQUENCY_HZ 10.0f
   #define BUZZER_STATUS_INTERVAL_MS 30000UL
 
   #define BUZZER_FREQ 2000 
 
-  #define BUZZER_DOT_TIME_MS 200
-  #define BUZZER_DASH_TIME_MS 600
-  #define BUZZER_SYMBOL_PAUSE_MS 150
+  #define BUZZER_DOT_TIME_MS 400
+  #define BUZZER_DASH_TIME_MS 1200
+  #define BUZZER_SYMBOL_PAUSE_MS 300
   #define BUZZER_GROUP_PAUSE_MS 700
 
   #define BUZZER_LETTER_MORSE_PAUSE_MS 1000
@@ -332,7 +332,7 @@
   #define MAX_ALTITUDE_DIGIT_GAP_MS      500
   #define MAX_ALTITUDE_BEEP_GAP_MS   2000
 
-  #define SIREN_PAUSE_MS 150
+  #define SIREN_PAUSE_MS 300
 
   #define BUZZER_STARTUP_PAUSE_MS 1500
   #define BUZZER_PREFLIGHT_PAUSE_MS 30000

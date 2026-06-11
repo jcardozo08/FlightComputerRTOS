@@ -227,7 +227,7 @@ bool LoRaManager::changeFrequency(
     return success;
 }
 
-bool LoRaManager::decodeCommand(const String& command, int& channel, int& addh, int& addl)
+bool LoRaManager::decodeCommand(String& command, int& channel, int& addh, int& addl)
 {
     if(command.length() <= 0)
     {
@@ -259,7 +259,7 @@ bool LoRaManager::decodeCommand(const String& command, int& channel, int& addh, 
         return false;
     }
 
-    channel = channelValue;
+    channel = chanValue;
     addh = addhValue;
     addl = addlValue;
 

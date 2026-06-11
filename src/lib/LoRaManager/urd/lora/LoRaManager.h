@@ -45,7 +45,7 @@ public:
         unsigned long timeoutMs
     );
 
-    bool decodeCommand(const String& command, int& channel, int& addh, int& addl);
+    bool decodeCommand(String& command, int& channel, int& addh, int& addl);
 
     bool changeFrequency(
         uint8_t channel,

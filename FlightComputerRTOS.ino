@@ -477,7 +477,7 @@ struct SystemStates {
   bool simulationRuntimeOk;
 #endif
 
-#if (STORAGE_MODE)
+#if (COMMUNICATION_ON)
   bool storageEnabled = STORAGE_MODE;
   bool storageInitOk;
   bool storageRuntimeOk;
@@ -677,7 +677,7 @@ void copySensorData(SensorData &dst) {
     xSemaphoreGive(gSensorMutex);
   }
 }
-a
+
 void updateSensorData(const SensorData &src) {
   if (xSemaphoreTake(gSensorMutex, portMAX_DELAY) == pdTRUE) {
     gSensorData = src;
@@ -1287,21 +1287,39 @@ String buildDataString(const SensorData &sensorData, const FlightEventsData &fli
 #endif
 
 #if (ACCEL)
+#if (AUTO_CALIBRATION_ACCEL)
   dataString += String(sensorData.accelFilteredX, 3) + '\t';
   dataString += String(sensorData.accelFilteredY, 3) + '\t';
   dataString += String(sensorData.accelFilteredZ, 3) + '\t';
+#else
+  dataString += String(sensorData.accelX, 3) + '\t';
+  dataString += String(sensorData.accelY, 3) + '\t';
+  dataString += String(sensorData.accelZ, 3) + '\t';
+#endif
 #endif
 
 #if (GYRO)
+#if (AUTO_CALIBRATION_GYRO)
   dataString += String(sensorData.gyroFilteredX, 3) + '\t';
   dataString += String(sensorData.gyroFilteredY, 3) + '\t';
   dataString += String(sensorData.gyroFilteredZ, 3) + '\t';
+#else
+  dataString += String(sensorData.gyroX, 3) + '\t';
+  dataString += String(sensorData.gyroY, 3) + '\t';
+  dataString += String(sensorData.gyroZ, 3) + '\t';
+#endif
 #endif
 
 #if (MAG)
+#if (AUTO_CALIBRATION_MAG)
   dataString += String(sensorData.magFilteredX, 3) + '\t';
   dataString += String(sensorData.magFilteredY, 3) + '\t';
   dataString += String(sensorData.magFilteredZ, 3) + '\t';
+#else
+  dataString += String(sensorData.magX, 3) + '\t';
+  dataString += String(sensorData.magY, 3) + '\t';
+  dataString += String(sensorData.magZ, 3) + '\t';
+#endif
 #endif
 
 #if (HUMIDITY)
@@ -1994,7 +2012,7 @@ void initSystemStates() {
   states.simulationRuntimeOk = false;
 #endif
 
-#if (STORAGE_MODE)
+#if (COMMUNICATION_ON)
   states.storageInitOk = false;
   states.storageRuntimeOk = false;
 #endif
