@@ -47,10 +47,10 @@
     Bme280TwoWire baro;
   #endif
 
-  #if (USE_BMP380)
-    // Placeholder for future implementation
-    // #include "src/lib/BMP380/BMP380.h"
-    // BMP380 baro;
+  #if (USE_BMP388)
+    #include "src/lib/BMP388/BMP388.h"
+    #define baro Barometer
+    BMP388 baro;
   #endif
 
 #endif
@@ -1760,10 +1760,29 @@ void calibrateBarometer() {
     }
   #endif
 
-  #if (USE_BMP380)
-    // Placeholder for future implementation
-    startupPressurePa = 0.0f;
-    startupAltitudeM = pressureToHeight(startupPressurePa);
+  #if (USE_BMP388)
+    for (int i = 0; i < BARO_STARTUP_FLUSH_READS; i++) {
+      baro.readAll();
+    }
+
+    float pressureSum = 0.0f;
+    int validSamples = 0;
+
+    for (int i = 0; i < NUM_STARTUP_READS; i++) {
+      baro.readAll();
+      if (baro) {
+        pressureSum += baro.getPressure();
+        validSamples++;
+      }
+    }
+
+    if (validSamples > 0) {
+      startupPressurePa = pressureSum / validSamples;
+      startupAltitudeM = pressureToHeight(startupPressurePa);
+    } else {
+      startupPressurePa = NAN;
+      startupAltitudeM = NAN;
+    }
   #endif
 
   #if (ESSENTIALS_ONLY_SERIAL_PRINT_MODE || NORMAL_SERIAL_PRINT_MODE)
@@ -2101,8 +2120,14 @@ bool initBarometer() {
     Serial.println(F("BME280 ok"));
   #endif
 
-  #if (USE_BMP380)
-    Serial.println(F("BMP380 placeholder"));
+  #if (USE_BMP388)
+    baro.begin();
+    if (baro) {
+      Serial.println(F("BMP388 ok"));
+    } else {
+      Serial.println(F("BMP388 err"));
+      return false;
+    }
   #endif
 
   calibrateBarometer();
@@ -2461,9 +2486,16 @@ void readBarometer(SensorData &data) {
       }
   #endif
 
-  #if (USE_BMP380)
-    data.barometerAvailable = false;
-  #endif
+  #if (USE_BMP388)
+    if (baro) {
+      data.barometerAvailable    = true;
+      data.barometerTemperatureC = baro.getTemperature();
+      data.barometerPressurePa   = baro.getPressure();
+      data.barometerAltitudeM    = pressureToHeight(data.barometerPressurePa) - startupAltitudeM;
+    } else {
+      data.barometerAvailable = false;
+    }
+#endif
 
   #if (BARO_FILTERS)
     #if (KALMAN_MovingAverage_BARO)
