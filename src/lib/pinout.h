@@ -146,7 +146,7 @@
 #elif defined(PLACA_MAIN_PTH)
 
 // ------------------------------ SENSORS ------------------------------//
-#define USE_BMP380 1
+#define USE_BMP388 1
 #define USE_ICM20948_ACCEL 1
 #define USE_ICM20948_GYRO 1
 #define USE_ICM20948_MAG 1
@@ -230,7 +230,7 @@
 #elif defined(PLACA_MAIN_SMD)
 
   // ------------------------------ SENSORS ------------------------------//
-  #define USE_BMP380 1
+  #define USE_BMP388 1
   #define USE_ICM20948_ACCEL 1
   #define USE_ICM20948_GYRO 1
   #define USE_ICM20948_MAG 1
