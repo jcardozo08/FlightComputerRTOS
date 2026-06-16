@@ -145,78 +145,84 @@
 // ============================================================================
 #elif defined(PLACA_MAIN_PTH)
 
-  // ------------------------------ I2C ------------------------------//
-    #define SDA_PIN 8
-    #define SCL_PIN 9
+// ------------------------------ SENSORS ------------------------------//
+#define USE_BMP380 1
+#define USE_ICM20948_ACCEL 1
+#define USE_ICM20948_GYRO 1
+#define USE_ICM20948_MAG 1
 
-  // ------------------------------ CARTAO SD ------------------------------//
-  #if (SD_CARD)
-    #define SD_MOSI 11
-    #define SD_MISO 13
-    #define SD_SCK 12
-    #define SD_CS 14
-  #endif
+// ------------------------------ I2C ------------------------------//
+#define SDA_PIN 8
+#define SCL_PIN 9
 
-  // ------------------------------ BUZZER ------------------------------//
-    #define BUZZ_PIN 42
-    #define BUZZ_TONE 0
-    #define BUZZ_ON LOW
+// ------------------------------ CARTAO SD ------------------------------//
+#if (SD_CARD)
+#define SD_MOSI 11
+#define SD_MISO 13
+#define SD_SCK 12
+#define SD_CS 14
+#endif
 
-  // ------------------------------ DHT ------------------------------//
-  #if (USE_DHT)
-    // #define DHT_PIN 
-  #endif
+// ------------------------------ BUZZER ------------------------------//
+#define BUZZ_PIN 42
+#define BUZZ_TONE 0
+#define BUZZ_ON LOW
 
-  // ------------------------------ SIGNAL ------------------------------//
-  #if (SIGNAL)
-    // #define SIGNAL_PIN
-  #endif
+// ------------------------------ DHT ------------------------------//
+#if (USE_DHT)
+// #define DHT_PIN
+#endif
 
-  // ------------------------------ LED ------------------------------//
-  #if (SD_LED || BUZZER_SILENT_MODE)
-    #define LED_PIN 35
-  #endif
+// ------------------------------ SIGNAL ------------------------------//
+#if (SIGNAL)
+// #define SIGNAL_PIN
+#endif
 
-  // ------------------------------ CAM ------------------------------//
-  #if (CAM)
-    // #define CAM_PIN
-  #endif
+// ------------------------------ LED ------------------------------//
+#if (SD_LED || BUZZER_SILENT_MODE)
+#define LED_PIN 35
+#endif
 
-  // ------------------------------ LORA_MODE ------------------------------//
-  #if (LORA_MODE)
-    #define M0_LORA_PIN 18
-    #define M1_LORA_PIN 17
-    #define AUX_LORA_PIN 41
-    #define LORA_RX 16
-    #define LORA_TX 15
-  #endif
+// ------------------------------ CAM ------------------------------//
+#if (CAM)
+// #define CAM_PIN
+#endif
 
-  // ------------------------------ GPS ------------------------------//
-  #if (GPS_MODE)
-    #define GPS_RX 40
-    #define GPS_TX 39
-  #endif
+// ------------------------------ LORA_MODE ------------------------------//
+#if (LORA_MODE)
+#define M0_LORA_PIN 18
+#define M1_LORA_PIN 17
+#define AUX_LORA_PIN 41
+#define LORA_RX 16
+#define LORA_TX 15
+#endif
 
-  // ------------------------------ PARAQUEDAS / PQDs ------------------------------//
-  #if (Parachute_FirstNormalEvent)
-    #define IGN_1 4
-    #define HEAL_1 5
-  #endif
+// ------------------------------ GPS ------------------------------//
+#if (GPS_MODE)
+#define GPS_RX 40
+#define GPS_TX 39
+#endif
 
-  #if (Parachute_FirstBackupEvent)
-    #define IGN_2 6
-    #define HEAL_2 7
-  #endif
+// ------------------------------ PARAQUEDAS / PQDs ------------------------------//
+#if (Parachute_FirstNormalEvent)
+#define IGN_1 4
+#define HEAL_1 5
+#endif
 
-  #if (Parachute_SecondNormalEvent)
-    #define IGN_3 21
-    #define HEAL_3 2
-  #endif
+#if (Parachute_FirstBackupEvent)
+#define IGN_2 6
+#define HEAL_2 7
+#endif
 
-  #if (Parachute_SecondBackupEvent)
-    #define IGN_4 47
-    #define HEAL_4 1
-  #endif
+#if (Parachute_SecondNormalEvent)
+#define IGN_3 21
+#define HEAL_3 2
+#endif
+
+#if (Parachute_SecondBackupEvent)
+#define IGN_4 47
+#define HEAL_4 1
+#endif
 
 // ============================================================================
 // PLACA MAIN SMD
@@ -224,6 +230,7 @@
 #elif defined(PLACA_MAIN_SMD)
 
   // ------------------------------ SENSORS ------------------------------//
+  #define USE_BMP380 1
   #define USE_ICM20948_ACCEL 1
   #define USE_ICM20948_GYRO 1
   #define USE_ICM20948_MAG 1
