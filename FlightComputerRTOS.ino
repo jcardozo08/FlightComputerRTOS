@@ -208,8 +208,8 @@
   bool changingFrequency = false;
   unsigned long lastLoraCommandTime = 0;
   int channel;
-  unsigned long addh;
-  unsigned long addl;
+  int addh;
+  int addl;
 
   LoRa_E32 e32Module(
     &LoRa,
@@ -1062,7 +1062,7 @@ void playSirenHiLo(uint16_t baseFreqHz)
 
 void playSirenFastPulse(uint16_t baseFreqHz)
 {
-#if BUZZER_PASSIVE
+#if (BUZZER_PASSIVE_MODE)
 
   uint16_t pulseFreqHz = baseFreqHz + 500;
 
@@ -1190,7 +1190,7 @@ String buildDataHeader() {
 #endif
 
 #if (STORAGE_MODE && SD_CARD)
-  header += "sd_ok";
+  header += "sd_ok\t";
 #endif
 
 #if (ENABLE_3D)
@@ -1643,20 +1643,25 @@ void processLoraCommand(const String &message) {
     if (loraManager.decodeCommand(command, channel, addh, addl)) {
       String requestConfirmationMsg = LORA_CHANGE_REQUEST_CONFIRMATION_FLIGHT;
 
+      String channelHex = String(channel, HEX);
       String addhHex = String(addh, HEX);
       String addlHex = String(addl, HEX);
 
+      channelHex.toUpperCase();
       addhHex.toUpperCase();
       addlHex.toUpperCase();
 
+      if (channelHex.length() < 2) channelHex = "0" + channelHex;
       if (addhHex.length() < 2) addhHex = "0" + addhHex;
       if (addlHex.length() < 2) addlHex = "0" + addlHex;
 
-      requestConfirmationMsg += String(channel);
+      requestConfirmationMsg += channelHex;
       requestConfirmationMsg += "_";
       requestConfirmationMsg += addhHex;
       requestConfirmationMsg += addlHex;
-      requestConfirmationMsg += String("#");
+      requestConfirmationMsg += "#";
+
+      LoRa.println(requestConfirmationMsg);
 
       changingFrequency = true;
     } else {
@@ -2360,7 +2365,11 @@ void initAll() {
   states.orientationInitOk = initOrientation();
 #endif
 
-  states.startupDone = true;
+  #if (BUZZER_INDICATOR)
+  states.startupDone = false;
+  #else
+    states.startupDone = true;
+  #endif
 
   updateSystemStates(states);
 }
@@ -3622,46 +3631,46 @@ void taskBuzzer(void *pvParameters) {
         #else
         bool sysStates[SYSTEM_SENSORS_ON];
 
-        int i = 0;
+        uint8_t stateCount = 0;
 
         #if (BARO)
-        sysStates[i++] = localSystemStates.barometerInitOk;
+        sysStates[stateCount++] = localSystemStates.barometerInitOk;
         playDot();
         #endif
 
         #if (STORAGE_MODE)
-        sysStates[i++] = localSystemStates.storageInitOk;
+        sysStates[stateCount++] = localSystemStates.storageInitOk;
         playDot();
         #endif
 
         #if (ACCEL)
-        sysStates[i++] = localSystemStates.accelerometerInitOk;
+        sysStates[stateCount++] = localSystemStates.accelerometerInitOk;
         playDot();
         #endif
 
         #if (GYRO)
-        sysStates[i++] = localSystemStates.gyroscopeInitOk;
+        sysStates[stateCount++] = localSystemStates.gyroscopeInitOk;
         playDot();
         #endif
 
         #if (MAG)
-        sysStates[i++] = localSystemStates.magnetometerInitOk;
+        sysStates[stateCount++] = localSystemStates.magnetometerInitOk;
         playDot();
         #endif
 
         #if (HUMIDITY)
-        sysStates[i++] = localSystemStates.humidityInitOk;
+        sysStates[stateCount++] = localSystemStates.humidityInitOk;
         playDot();
         #endif
 
         #if (GPS_MODE)
-        sysStates[i++] = localSystemStates.gpsInitOk;
+        sysStates[stateCount++] = localSystemStates.gpsInitOk;
         playDot();
         #endif
 
+        vTaskDelay(pdMS_TO_TICKS(2000));
 
-
-        for (uint8_t i = 0; i < SYSTEM_SENSORS_ON; i++) {
+        for (uint8_t i = 0; i < stateCount; i++) {
           if(sysStates[i] == true) {
             playDot();
           } else {
@@ -3673,6 +3682,7 @@ void taskBuzzer(void *pvParameters) {
         localSystemStates.startupDone = true;
         updateSystemStates(localSystemStates);
 
+        vTaskDelay(pdMS_TO_TICKS(10000));
         break;
       }
 
@@ -3680,11 +3690,18 @@ void taskBuzzer(void *pvParameters) {
         vTaskDelay(pdMS_TO_TICKS(BUZZER_PREFLIGHT_PAUSE_MS));
         copySystemStates(localSystemStates);
         
+        #if (BUZZER_PASSIVE_MODE)
+        playSirenWail(2000);
+        playSirenWail(2000);
+        #endif
+        
+        vTaskDelay(pdMS_TO_TICKS(1000));
+
         #if (URD_APP_SERIAL)
           playSirenHiLo(BUZZER_URD_APP_MODE_LOOP_FREQ_HZ);
         #else
           #if (PARACHUTE)
-            #if (BUZZER_SILENT_PARACHUTE_MODE)
+            #if (!BUZZER_SILENT_PARACHUTE_MODE)
               #if (Parachute_SecondNormalEvent)
               if (!localSystemStates.parachuteSecondNormalHealth) {
                 playMorseCode(BUZZER_SQUIB_2ND_NORMAL_MORSE);

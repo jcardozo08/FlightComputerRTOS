@@ -135,7 +135,9 @@ bool LoRaManager::changeFrequency(
     if (debugEnabled)
     {
         Serial.print(F("[LORA MANAGER DEBUG] Applying direct config: CHAN="));
-        Serial.print(channel);
+        Serial.print(F("0x"));
+        if (channel < 0x10) Serial.print('0');
+        Serial.print(channel, HEX);
 
         Serial.print(F(" ADDH=0x"));
         if (addh < 0x10) Serial.print('0');
@@ -206,7 +208,9 @@ bool LoRaManager::changeFrequency(
     if (debugEnabled)
     {
         Serial.print(F("[LORA DEBUG] Readback CHAN="));
-        Serial.print(checkConfig.CHAN);
+        Serial.print(F("0x"));
+        if (checkConfig.CHAN < 0x10) Serial.print('0');
+        Serial.print(checkConfig.CHAN, HEX);
 
         Serial.print(F(" ADDH=0x"));
         if (checkConfig.ADDH < 0x10) Serial.print('0');
@@ -227,14 +231,27 @@ bool LoRaManager::changeFrequency(
     return success;
 }
 
-bool LoRaManager::decodeCommand(String& command, int& channel, int& addh, int& addl)
+bool isHexString(const String& value)
 {
-    if(command.length() <= 0)
+    if (value.length() == 0)
     {
         return false;
     }
 
-    if (!command.startsWith("CH4N"))
+    for (uint8_t i = 0; i < value.length(); i++)
+    {
+        if (!isxdigit((unsigned char)value[i]))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool LoRaManager::decodeCommand(String& command, int& channel, int& addh, int& addl)
+{
+    if (command.length() <= 0)
     {
         return false;
     }
@@ -242,26 +259,47 @@ bool LoRaManager::decodeCommand(String& command, int& channel, int& addh, int& a
     command.trim();
     command.toUpperCase();
 
+    if (!command.startsWith("CH4N"))
+    {
+        return false;
+    }
+
+    if (command.length() != 11)
+    {
+        return false;
+    }
+
+    if (command.charAt(6) != '_')
+    {
+        return false;
+    }
+
     String channelStr = command.substring(4, 6);
     String addhStr = command.substring(7, 9);
     String addlStr = command.substring(9, 11);
 
-    int chanValue = channelStr.toInt();
-    unsigned long addhValue = strtoul(addhStr.c_str(), nullptr, 16);
-    unsigned long addlValue = strtoul(addlStr.c_str(), nullptr, 16);
-
-    if (chanValue < 0 || chanValue > LORA_MAX_CHANNEL)
+    if (!isHexString(channelStr) || !isHexString(addhStr) || !isHexString(addlStr))
     {
         return false;
     }
+
+    unsigned long chanValue = strtoul(channelStr.c_str(), nullptr, 16);
+    unsigned long addhValue = strtoul(addhStr.c_str(), nullptr, 16);
+    unsigned long addlValue = strtoul(addlStr.c_str(), nullptr, 16);
+
+    if (chanValue > LORA_MAX_CHANNEL)
+    {
+        return false;
+    }
+
     if (addhValue > 0xFF || addlValue > 0xFF)
     {
         return false;
     }
 
-    channel = chanValue;
-    addh = addhValue;
-    addl = addlValue;
+    channel = (int)chanValue;
+    addh = (int)addhValue;
+    addl = (int)addlValue;
 
     return true;
 }

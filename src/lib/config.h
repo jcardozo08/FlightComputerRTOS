@@ -21,16 +21,16 @@
 
 //------------------------------ FILTERS ------------------------------//
 #define BARO_FILTERS (BARO && 1)  // Activate filters for barometer
-  #define KALMAN_MovingAverage_BARO (BARO_FILTERS && 1)   // Switch between Kalman filter (1) or moving average (0) for barometer
+  #define KALMAN_MovingAverage_BARO (BARO_FILTERS && 0)   // Switch between Kalman filter (1) or moving average (0) for barometer
 
 #define ACCEL_FILTERS (ACCEL && 1) // Activate filters for accelerometer
-  #define KALMAN_MovingAverage_ACCEL (ACCEL_FILTERS && 1)   // Switch between Kalman filter (1) or moving average (0) for accelerometer
+  #define KALMAN_MovingAverage_ACCEL (ACCEL_FILTERS && 0)   // Switch between Kalman filter (1) or moving average (0) for accelerometer
 
 #define GYRO_FILTERS (GYRO && 1)  // Activate filters for gyroscope
-  #define KALMAN_MovingAverage_GYRO (GYRO_FILTERS && 1)   // Switch between Kalman filter (1) or moving average (0) for gyroscope
+  #define KALMAN_MovingAverage_GYRO (GYRO_FILTERS && 0)   // Switch between Kalman filter (1) or moving average (0) for gyroscope
 
 #define MAG_FILTERS (MAG && 1)   // Activate filters for magnetometer
-  #define KALMAN_MovingAverage_MAG (MAG_FILTERS && 1)   // Switch between Kalman filter (1) or moving average (0) for magnetometer
+  #define KALMAN_MovingAverage_MAG (MAG_FILTERS && 0)   // Switch between Kalman filter (1) or moving average (0) for magnetometer
 
 //------------------------------ CALIBRATION ------------------------------//
 #define CALIBRATION_MODE (SENSORS_ON && 1) // Activate calibration mode for sensors
@@ -57,10 +57,10 @@
 //------------------------------ COMMUNICATION ------------------------------//
 #define COMMUNICATION_ON 1 // Master switch for all communication modules (1 to activate, 0 to deactivate)
   #define SERIAL_PRINT (COMMUNICATION_ON && 1)  // Enable serial output for debugging and monitoring
-    #define NORMAL_SERIAL_PRINT_MODE (SERIAL_PRINT && 1) // Switch between normal serial print mode or essentials-only serial print mode
-    #define ESSENTIALS_ONLY_SERIAL_PRINT_MODE (SERIAL_PRINT && 0) // Switch between normal serial print mode or essentials-only serial print mode
+    #define NORMAL_SERIAL_PRINT_MODE (SERIAL_PRINT && 1) // Turn on normal serial print mode
+    #define ESSENTIALS_ONLY_SERIAL_PRINT_MODE (SERIAL_PRINT && 1) // Turn on essentials-only serial print mode
   
-  #define LORA_MODE (COMMUNICATION_ON && 1)      // Activate LoRa communication
+  #define LORA_MODE (COMMUNICATION_ON && 0)      // Activate LoRa communication
     #define LORA_ONLY_ESSENTIALS (LORA_MODE && 0) // Switch between only essentials data or all data in LoRa communication
     #define LORA_MANAGER (LORA_MODE && 1) // Activate LoRa manager for handling LoRa communication and frequency changes
       #define LORA_RESET_TO_BASE_FREQ_ON_ERROR (LORA_MANAGER && 1) // Automatically reset to base frequency if there is an error during LoRa frequency change process
@@ -68,15 +68,15 @@
       #define LORA_MANAGER_E32 1  // Set to 1 if using the E32 LoRa module (Do not change this for now, as the E22 support is not implemented yet)
       #define LORA_MANAGER_E22 0  // Set 1 if using the E22 LoRa module (Not implemented yet)
       
-  #define GPS_MODE (COMMUNICATION_ON && 1)    // Activate GPS serial communication
+  #define GPS_MODE (COMMUNICATION_ON && 0)    // Activate GPS serial communication
     #define GPS_ONLY_ESSENTIALS (GPS_MODE && 0) // Switch between only essentials data or all data in GPS communication
 
   #define LED_INDICATOR (COMMUNICATION_ON && 0) // Enable LED indicator for system status
 
   #define BUZZER_INDICATOR (COMMUNICATION_ON && 1)  // Enable buzzer for system status indication
-    #define BUZZER_PASSIVE_MODE (BUZZER_INDICATOR && 0) // Switch between passive or active buzzer mode for system status indication
+    #define BUZZER_PASSIVE_MODE (BUZZER_INDICATOR && 1) // Switch between passive or active buzzer mode for system status indication
     #define BUZZER_SILENT_MODE (BUZZER_INDICATOR && 0) // Silent mode for buzzer (use led indicator instead of buzzer for system status indication, for night testing purposes rsrs)
-    #define BUZZER_SILENT_PARACHUTE_MODE (BUZZER_INDICATOR && PARACHUTE && 0) // Silent mode for buzzer ignition continuity verification, used in the redundant board without e-matches connected. 
+    #define BUZZER_SILENT_PARACHUTE_MODE (BUZZER_INDICATOR && PARACHUTE && 1) // Silent mode for buzzer ignition continuity verification, used in the redundant board without e-matches connected. 
 
 //------------------------------ URD APP INTERFACE ------------------------------//
 #define URD_APP_SERIAL (!SERIAL_PRINT && 0) // Enable serial communication with URD App for real-time telemetry visualization and analysis
@@ -334,7 +334,7 @@
 
   #define SIREN_PAUSE_MS 300
 
-  #define BUZZER_STARTUP_PAUSE_MS 1500
+  #define BUZZER_STARTUP_PAUSE_MS 3000
   #define BUZZER_PREFLIGHT_PAUSE_MS 30000
 
   #define BUZZER_SD_MORSE                     "..."    // S
@@ -350,7 +350,7 @@
   #define BUZZER_SQUIB_2ND_BACKUP_MORSE      ".-. -- -..."  // R M B
   #define BUZZER_SQUIB_1ST_BACKUP_MORSE    ".-. -.. -..."   // R D B
 
-  #define BUZZER_URD_APP_MODE_MORSE           ".-.-."  // U
+  #define BUZZER_URD_APP_MODE_MORSE           "..-"  // U
   #define BUZZER_URD_APP_MODE_LOOP_FREQ_HZ     1500 // Hz
 
 #endif
