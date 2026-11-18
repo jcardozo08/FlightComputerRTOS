@@ -32,5 +32,3 @@ Tudo é selecionado em tempo de compilação:
 - `src/lib/pinout.h`: pinagem de cada placa ([PlacaMainSMD_v1](https://github.com/jcardozo08/PlacaMainSMD_v1), [Essentials-V2](https://github.com/jcardozo08/Essentials-V2) etc.)
 
 **Stack:** C++ · Arduino core para ESP32 · FreeRTOS · ESP32-S3
-
-> Desenvolvido na equipe de foguetemodelismo **UFABC Rocket Design**.
