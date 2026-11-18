@@ -11,6 +11,10 @@
 #include "src/lib/config.h"
 #include "src/lib/pinout.h"
 
+#if defined(ARDUINO_ARCH_ESP32)
+#include <esp_system.h>
+#endif
+
 //=================================================================================== REDEFINES CONFIGURATIONS ===================================================================================
 
   #if (BUZZER_SILENT_MODE)
@@ -701,6 +705,60 @@ void updateFlightEventsData(const FlightEventsData &src) {
 }
 #endif
 
+#if defined(ARDUINO_ARCH_ESP32)
+String espResetReason = "UNKNOWN";
+
+String espResetReasonToString(esp_reset_reason_t reason) {
+  switch (reason) {
+    case ESP_RST_POWERON: return "POWERON";
+    case ESP_RST_EXT: return "EXT";
+    case ESP_RST_SW: return "SW";
+    case ESP_RST_PANIC: return "PANIC";
+    case ESP_RST_INT_WDT: return "INT_WDT";
+    case ESP_RST_TASK_WDT: return "TASK_WDT";
+    case ESP_RST_WDT: return "WDT";
+    case ESP_RST_DEEPSLEEP: return "DEEPSLEEP";
+    case ESP_RST_BROWNOUT: return "BROWNOUT";
+    case ESP_RST_SDIO: return "SDIO";
+    default: return "UNKNOWN";
+  }
+}
+
+void initEspResetReason() {
+  espResetReason = espResetReasonToString(esp_reset_reason());
+}
+#endif
+
+String buildStartupLogLine() {
+  String line = "Baro starts at ";
+
+#if (BARO || URD_APP_SIMULATION_MODE)
+  line += String(startupAltitudeM, 2);
+  line += " m";
+  line += "; startup pressure ";
+  line += String(startupPressurePa, 2);
+  line += " Pa";
+#else
+  line += "N/A";
+#endif
+
+  line += "; restart protection ";
+
+#if (RESTART_PROTECTION)
+  line += "enabled";
+  line += "; flightActive ";
+  line += String(flightActive ? 1 : 0);
+#else
+  line += "disabled";
+#endif
+
+#if defined(ARDUINO_ARCH_ESP32)
+  line += "; esp reset reason ";
+  line += espResetReason;
+#endif
+
+  return line;
+}
 
 #if (ENABLE_3D)
 float normalizeAngle180(float angleDeg) {
@@ -1186,7 +1244,7 @@ String buildDataHeader() {
 #endif
 
 #if (BATTERY_MONITOR)
-  header += "battery_state\t";
+  header += "battery_voltage\t";
 #endif
 
 #if (STORAGE_MODE && SD_CARD)
@@ -1328,7 +1386,7 @@ String buildDataString(const SensorData &sensorData, const FlightEventsData &fli
 #endif
 
 #if (BATTERY_MONITOR)
-  dataString += String(sensorData.batteryState, 2) + '\t';
+  dataString += String(sensorData.batteryVoltage, 2) + '\t';
 #endif
 
 #if (STORAGE_MODE && SD_CARD)
@@ -1481,67 +1539,90 @@ String buildDataString(const SensorData &sensorData, const FlightEventsData &fli
 
 #if (LORA_MODE)
 String buildLoraDataString(const SensorData &sensorData, const FlightEventsData &flightData) {
+  static uint32_t line = 0;
+  
   String loraDataString = "";
 
-  loraDataString += "T:" + String(sensorData.timestampMs / 1000.0f, 3) + '\t';
+  loraDataString += "L" + String(line++) + '\t'; // Line number
+  loraDataString += "T" + String(sensorData.timestampMs / 1000.0f, 3) + '\t'; // Time
 
 #if (GPS_MODE)
   if (sensorData.gpsAvailable) {
-    loraDataString += "A" + String(sensorData.gpsLatitudeDeg, 6) + '\t';
-    loraDataString += "O" + String(sensorData.gpsLongitudeDeg, 6);
+    loraDataString += "A" + String(sensorData.gpsLatitudeDeg, 6) + '\t'; // Latitude
+    loraDataString += "O" + String(sensorData.gpsLongitudeDeg, 6) + '\t'; // Longitude
+    loraDataString += "h" + String(00) + '\t'; // Hour (dummy value for hour)
+    loraDataString += "n" + String(00) + '\t'; // Minute (dummy value for minute)
+    loraDataString += "g" + String(sensorData.gpsHdop, 1) + '\t'; // HDOP/Precision
   } else {
-    loraDataString += "A~\tO~";
+    loraDataString += "A~\tO~\th00\tn00\tg100.0\t";
   }
 #else
-  loraDataString += "A~\tO~";
+  loraDataString += "A~\tO~\th00\tn00\tg100.0\t";
 #endif
 
 #if (BARO)
-  loraDataString += "H" + String(sensorData.barometerFilteredAltitudeM, 2) + '\t';
-  loraDataString += "ALTMAX" + String(flightData.maxTrackedAltitudeM, 2) + '\t';
+  loraDataString += "H" + String(sensorData.barometerFilteredAltitudeM, 2) + '\t'; // Actual altitude
+  // loraDataString += "ALTMAX" + String(flightData.maxTrackedAltitudeM, 2) + '\t'; // Max altitude
+#else
+  loraDataString += "H0.00\t"; // Actual altitude not available
 #endif
 
 #if (STORAGE_MODE && SD_CARD)
-  loraDataString += "s" + String(sdWriteOk ? 1 : 0) + '\t';
+  loraDataString += "s" + String(sdWriteOk ? 1 : 0) + '\t'; // SD card write status
+#else
+  loraDataString += "s0\t"; // SD card write status not available
 #endif
 
 #if (APOGEE_BARO || URD_APP_SIMULATION_MODE)
-  loraDataString += "a" + String(flightData.apogeeAltitudeM, 2) + '\t';
-  loraDataString += "t" + String(flightData.apogeeTimeMs, 2) + '\t';
+  loraDataString += "a" + String(flightData.apogeeAltitudeM, 2) + '\t'; // Apogee altitude 
+  loraDataString += "t" + String(flightData.apogeeTimeMs / 1000.0f, 2) + '\t'; // Apogee time 
+#else
+  loraDataString += "a0.00\tt0.00\t"; // Apogee data not available
 #endif
 
 #if (PARACHUTE)
   #if (Parachute_FirstNormalEvent)
-    loraDataString += "D" + String(flightData.parachuteFirstNormalAltitudeM, 2) + '\t';
+    loraDataString += "D" + String(flightData.parachuteFirstNormalAltitudeM, 2) + '\t'; // First normal parachute event
+  #else
+    loraDataString += "D0.00\t"; // First normal parachute event not available
   #endif
 
   #if (Parachute_FirstBackupEvent)
-    loraDataString += "d" + String(flightData.parachuteFirstBackupAltitudeM, 2) + '\t';
+    loraDataString += "d" + String(flightData.parachuteFirstBackupAltitudeM, 2) + '\t'; // First backup parachute event
+  #else
+    loraDataString += "d0.00\t"; // First backup parachute event not available
   #endif
 
   #if (Parachute_SecondNormalEvent)
-    loraDataString += "M" + String(flightData.parachuteSecondNormalAltitudeM, 2) + '\t';
+    loraDataString += "M" + String(flightData.parachuteSecondNormalAltitudeM, 2) + '\t'; // Second normal parachute event
+  #else
+    loraDataString += "M0.00\t"; // Second normal parachute event not available
   #endif
 
   #if (Parachute_SecondBackupEvent)
-    loraDataString += "m" + String(flightData.parachuteSecondBackupAltitudeM, 2) + '\t';
+    loraDataString += "m" + String(flightData.parachuteSecondBackupAltitudeM, 2) + '\t'; // Second backup parachute event
+  #else
+    loraDataString += "m0.00\t"; // Second backup parachute event not available
   #endif
+#else
+  loraDataString += "D0.00\td0.00\tM0.00\tm0.00\t";
 #endif
 
 #if (BARO)
-  loraDataString += "c" + String(sensorData.barometerTemperatureC, 2) + '\t';
+  loraDataString += "c" + String(sensorData.barometerTemperatureC, 2) + '\t'; // Barometer temperature
+#else
+  loraDataString += "c0.00\t"; // Barometer temperature not available
 #endif
 
 #if (ENABLE_3D)
   if (sensorData.orientationAvailable) {
-    loraDataString += "R" + String(sensorData.rollDeg, 2) + '\t';
-    loraDataString += "P" + String(sensorData.pitchDeg, 2) + '\t';
-    loraDataString += "Y" + String(sensorData.yawDeg, 2) + '\t';
+    loraDataString += "R" + String(sensorData.rollDeg, 2) + '\t'; // Roll
+    loraDataString += "P" + String(sensorData.pitchDeg, 2) + '\t'; // Pitch
+    loraDataString += "Y" + String(sensorData.yawDeg, 2) + '\t'; // Yaw
   } else {
     loraDataString += "R~\tP~\tY~\t";
   }
 #endif
-
 
   return loraDataString;
 }
@@ -1558,6 +1639,7 @@ void printCommunicationHeadersIfNeeded() {
 
 #if (NORMAL_SERIAL_PRINT_MODE)
   if (!serialHeaderPrinted) {
+    Serial.println(buildStartupLogLine());
     Serial.println(dataHeader);
     serialHeaderPrinted = true;
   }
@@ -1565,6 +1647,7 @@ void printCommunicationHeadersIfNeeded() {
 
 #if (LORA_MODE)
   if (!loraHeaderPrinted) {
+    LoRa.println(buildStartupLogLine());
     LoRa.println(loraHeader);
     loraHeaderPrinted = true;
   }
@@ -1574,6 +1657,7 @@ void printCommunicationHeadersIfNeeded() {
   if (!sdHeaderPrinted) {
     logFile = SD.open(nameSD, FILE_APPEND);
     if (logFile) {
+      logFile.println(buildStartupLogLine());
       logFile.println(dataHeader);
       logFile.close();
       sdHeaderPrinted = true;
@@ -1623,7 +1707,7 @@ void createSdFileName() {
 
 void verifyLoraCommand() {
   String command;
-  if ((millis() - lastLoraCommandTime > LORA_COMMAND_TIMEOUT_MS) && changingFrequency) {
+  if ((millis() - lastLoraCommandTime > LORA_CHANGE_TIMEOUT_MS) && changingFrequency) {
     LoRa.println(LORA_CHANGE_DONE_ERROR_FLIGHT);
     #if (LORA_RESET_TO_BASE_FREQ_ON_ERROR)
     loraManager.changeFrequency(LORA_BASE_CHAN, LORA_BASE_ADDH, LORA_BASE_ADDL);
@@ -1889,9 +1973,9 @@ void applyMagnetometerCalibration(float &x, float &y, float &z) {
   #if (USE_ICM20948_MAG)
     // Placeholder for future ICM20948 magnetometer calibration 
   #else
-    x = (x - MAG_BIAS_X) * MAG_SCALE_X;
-    y = (y - MAG_BIAS_Y) * MAG_SCALE_Y;
-    z = (z - MAG_BIAS_Z) * MAG_SCALE_Z;
+    // x = (x - MAG_BIAS_X) * MAG_SCALE_X;
+    // y = (y - MAG_BIAS_Y) * MAG_SCALE_Y;
+    // z = (z - MAG_BIAS_Z) * MAG_SCALE_Z;
   #endif
 }
 #endif
@@ -2214,13 +2298,12 @@ bool initGyroscope() {
     imu.setGyrRange(ICM20948_GYRO_RANGE_250);
     imu.setGyrDLPF(ICM20948_DLPF_6);
   #endif
-  #endif
-
-  
 
   #if (!USE_ICM20948_ACCEL)
     initCalibrationIcm20948();
   #endif
+  #endif
+
   return true;
 }
 #endif
@@ -2246,13 +2329,14 @@ bool initMagnetometer() {
     Serial.println(F("ICM20948 mag ok"));
 
     imu.setMagOpMode(AK09916_CONT_MODE_20HZ);
-  #endif
 
   
   
   #if (!USE_ICM20948_ACCEL && !USE_ICM20948_GYRO)
     initCalibrationIcm20948();
   #endif
+  #endif
+
   
   return true;
 }
@@ -2287,7 +2371,7 @@ bool initGps() {
 //------------------------------ BATTERY MONITOR INITIALIZATION ------------------------------//
 #if (BATTERY_MONITOR)
 bool initBatteryMonitor() {
-  pinMode(BATTERY_VOLTAGE_PIN, INPUT);
+  pinMode(BATTERY_PIN, INPUT);
   #if (ESSENTIALS_ONLY_SERIAL_PRINT_MODE || NORMAL_SERIAL_PRINT_MODE)
     Serial.println(F("Battery monitor initialized"));
   #endif
@@ -2805,11 +2889,16 @@ void readGps(SensorData &data) {
 void readBatteryMonitor(SensorData &data) {
   int raw = analogRead(BATTERY_PIN);
 
-  float adcVoltage = (raw / 4095.0f) * ADC_REFERENCE_VOLTAGE;
-  float batteryVoltage = adcVoltage * BATTERY_DIVIDER_RATIO;
+#if defined(ARDUINO_ARCH_ESP32)
+  float adcVoltage = analogReadMilliVolts(BATTERY_PIN) / 1000.0f;
+#else
+  float adcVoltage = (raw / ADC_RESOLUTION) * ADC_REFERENCE_VOLTAGE;
+#endif
+
+  float batteryVoltage = adcVoltage * ((BATTERY_DIVIDER_R1 + BATTERY_DIVIDER_R2) / BATTERY_DIVIDER_R2);
 
   data.batteryState = true;
-  data.batteryVoltage = batteryVoltage; 
+  data.batteryVoltage = batteryVoltage;
 
   float percent = (batteryVoltage - BATTERY_EMPTY_VOLTAGE) /
                   (BATTERY_FULL_VOLTAGE - BATTERY_EMPTY_VOLTAGE) * 100.0f;
@@ -3496,10 +3585,6 @@ void taskCommunication(void *pvParameters) {
       copyFlightEventsData(localFlightData);
     #endif
 
-    #if (LORA_MODE)
-      String loraDataString = buildLoraDataString(localSensorData, localFlightData);
-    #endif
-
     #if (NORMAL_SERIAL_PRINT_MODE || STORAGE_MODE)
       String dataString = buildDataString(localSensorData, localFlightData);
     #endif
@@ -3529,7 +3614,7 @@ void taskCommunication(void *pvParameters) {
 #endif
 
 #if (STORAGE_MODE && SD_CARD)
-    if ((nowMs - lastSdOutputMs) >= SD_SAVING_INTERVAL_MS) {
+    if (sdInitOk && ((nowMs - lastSdOutputMs) >= SD_SAVING_INTERVAL_MS)) {
       #if (DEBUG_PRINTS_SD)
         Serial.println("SD protection: " + String(sdDelayProtectionWhenErr));
       #endif
@@ -3553,7 +3638,7 @@ void taskCommunication(void *pvParameters) {
       lastSdOutputMs = nowMs;
     }
 
-    if (sdDelayProtectionWhenErr && ((nowMs - lastSdDelayOutputMs) >= SD_ERROR_RETRY_INTERVAL_MS)) {
+    if (sdInitOk && sdDelayProtectionWhenErr && ((nowMs - lastSdDelayOutputMs) >= SD_ERROR_RETRY_INTERVAL_MS)) {
       sdDelayProtectionWhenErr = false;
       lastSdDelayOutputMs = nowMs;
     }
@@ -3571,6 +3656,7 @@ void taskCommunication(void *pvParameters) {
         if (!changingFrequency) 
       #endif
       {
+      String loraDataString = buildLoraDataString(localSensorData, localFlightData);
       LoRa.println(loraDataString);
       }
       lastLoRaOutputMs = nowMs;
@@ -3899,6 +3985,10 @@ void setupSensorsModule() {
 //=================================================================================== SETUP ===================================================================================
 
 void setup() {
+  #if defined(ARDUINO_ARCH_ESP32)
+  initEspResetReason();
+  #endif
+
   #if (SERIAL_PRINT)
   Serial.begin(SERIAL_BAUD_RATE);
   #endif

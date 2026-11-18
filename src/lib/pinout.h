@@ -146,14 +146,19 @@
 #elif defined(PLACA_MAIN_PTH)
 
 // ------------------------------ SENSORS ------------------------------//
-#define USE_BMP388 1
-#define USE_ICM20948_ACCEL 1
-#define USE_ICM20948_GYRO 1
-#define USE_ICM20948_MAG 1
-
+// #define USE_BMP388 1
+// #define USE_ICM20948_ACCEL 1
+// #define USE_ICM20948_GYRO 1
+// #define USE_ICM20948_MAG 1
+#define USE_BMP280 1
+#define USE_MPU9250_ACCEL 1
+#define USE_MPU9250_GYRO 1
+#define USE_MPU9250_MAG 1
 // ------------------------------ I2C ------------------------------//
 #define SDA_PIN 8
 #define SCL_PIN 9
+// #define SDA_PIN 21
+// #define SCL_PIN 22
 
 // ------------------------------ CARTAO SD ------------------------------//
 #if (SD_CARD)
@@ -215,7 +220,7 @@
 #endif
 
 #if (Parachute_SecondNormalEvent)
-#define IGN_3 21
+#define IGN_3 13
 #define HEAL_3 2
 #endif
 

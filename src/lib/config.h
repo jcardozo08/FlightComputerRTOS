@@ -18,7 +18,7 @@
   #define MAG (SENSORS_ON && 1)           // Activate magnetometer
   #define HUMIDITY (SENSORS_ON && 0)      // Activate temperature and humidity sensor DHT22
 
-
+#define BATTERY_MONITOR (ARDUINO_ARCH_ESP32 && 0) // Activate voltage measurement (only for PLACA MAIN SMD and PLACA MAIN IC, only esp's family)
 //------------------------------ FILTERS ------------------------------//
 #define BARO_FILTERS (BARO && 1)  // Activate filters for barometer
   #define KALMAN_MovingAverage_BARO (BARO_FILTERS && 0)   // Switch between Kalman filter (1) or moving average (0) for barometer
@@ -47,7 +47,7 @@
 //------------------------------ FLIGHT CONTROL ------------------------------//
 #define WUF_PROTECTION 1  // "Wait Until Flight Condition" - Wait for Flight Condition before starting apogee detection and parachute deployment
 #define TRANSONIC_PROTECTION 1 // Transonic protection - Avoid parachute deployment during transonic phase of the flight
-#define RESTART_PROTECTION 0 // Restart protection - Avoid deployment problems in case of unexpected system reset during flight
+#define RESTART_PROTECTION 1 // Restart protection - Avoid deployment problems in case of unexpected system reset during flight
 
 //------------------------------ APOGEE FUNCTIONS ------------------------------//
 #define APOGEE_BARO (BARO && 1)      // Apogee detection based on barometer readings
@@ -58,9 +58,9 @@
 #define COMMUNICATION_ON 1 // Master switch for all communication modules (1 to activate, 0 to deactivate)
   #define SERIAL_PRINT (COMMUNICATION_ON && 1)  // Enable serial output for debugging and monitoring
     #define NORMAL_SERIAL_PRINT_MODE (SERIAL_PRINT && 1) // Turn on normal serial print mode
-    #define ESSENTIALS_ONLY_SERIAL_PRINT_MODE (SERIAL_PRINT && 1) // Turn on essentials-only serial print mode
+    #define ESSENTIALS_ONLY_SERIAL_PRINT_MODE (SERIAL_PRINT && 0) // Turn on essentials-only serial print mode
   
-  #define LORA_MODE (COMMUNICATION_ON && 0)      // Activate LoRa communication
+  #define LORA_MODE (COMMUNICATION_ON && 1)      // Activate LoRa communication
     #define LORA_ONLY_ESSENTIALS (LORA_MODE && 0) // Switch between only essentials data or all data in LoRa communication
     #define LORA_MANAGER (LORA_MODE && 1) // Activate LoRa manager for handling LoRa communication and frequency changes
       #define LORA_RESET_TO_BASE_FREQ_ON_ERROR (LORA_MANAGER && 1) // Automatically reset to base frequency if there is an error during LoRa frequency change process
@@ -90,7 +90,7 @@
 #define Parachute_FirstNormalEvent (PARACHUTE && 1) // First normal event after apogee (e.g., deploy first parachute)
 #define Parachute_FirstBackupEvent (PARACHUTE && 1) // First backup event after apogee (e.g., deploy first backup parachute)
 #define Parachute_SecondNormalEvent (PARACHUTE && 1) // Second normal event after apogee (e.g., deploy second parachute)
-#define Parachute_SecondBackupEvent (PARACHUTE && 1) // Second backup event after apogee (e.g., deploy second backup parachute)
+#define Parachute_SecondBackupEvent (PARACHUTE && 0) // Second backup event after apogee (e.g., deploy second backup parachute)
 
 #define PARACHUTE_TEST_MODE (PARACHUTE && 0) // Parachute deployment test mode - Deploy parachute at small predefined altitude for testing purposes 
   #define ELEVATOR_TEST_MODE (PARACHUTE_TEST_MODE && 0) // Elevator test mode - Deploy parachute at small predefined altitude for testing purposes in elevator
@@ -103,7 +103,7 @@
   #define EEPROM (STORAGE_MODE && 0)           // Activate EEPROM storage system
   #define SD_LED (STORAGE_MODE && 0)                // Enable LED indicator for storage status
 
-#define FILE_NAME "RED"  // Prefix for log file names
+#define FILE_NAME "SAT"  // Prefix for log file names
 
 //------------------------------ OTHER FUNCTIONS ------------------------------//
 #define VERTICAL_VELOCITY (BARO && 0)  // Vertical velocity calculation based on barometer readings (Not implemented yet)
@@ -113,7 +113,7 @@
 //------------------------------ DEBUG MODE ------------------------------//
 #define DEBUG_PRINTS (SERIAL_PRINT && 0) // Enable extra debug prints in serial output
   #define DEBUG_PRINTS_TASK_SENSORS (DEBUG_PRINTS && SENSORS_ON && 0) // Enable extra debug prints related to sensors in serial output
-  #define DEBUG_PRINTS_TASK_COMMUNICATION (DEBUG_PRINTS && COMMUNICATION_ON && 0) // Enable extra debug prints related to communication in serial output
+  #define DEBUG_PRINTS_TASK_COMMUNICATION (DEBUG_PRINTS && COMMUNICATION_ON && 1) // Enable extra debug prints related to communication in serial output
   #define DEBUG_PRINTS_TASK_FLIGHT_EVENTS (DEBUG_PRINTS && (APOGEE_BARO || APOGEE_IMU) && 0) // Enable extra debug prints related to flight events in serial output
   #define DEBUG_PRINTS_STACK_INFORMATION (DEBUG_PRINTS && 0) // Enable debug prints of stack information for each task in serial output
   #define DEBUG_PRINTS_SD (DEBUG_PRINTS && SD_CARD && 1) // Enable extra debug prints related to SD card operations in serial output
@@ -154,6 +154,15 @@
 
 #if (HUMIDITY)
   #define DHTTYPE DHT22  // Tipo do sensor
+#endif
+
+#if (BATTERY_MONITOR)
+  #define ADC_REFERENCE_VOLTAGE 1.1f // Reference voltage for ADC in volts (1.1V for ESP32)
+  #define ADC_RESOLUTION 4095.0f
+  #define BATTERY_DIVIDER_R1 1000000.0f // Resistor R1 value in ohms for voltage divider
+  #define BATTERY_DIVIDER_R2 1000000.0f // Resistor R2 value in ohms for voltage divider
+  #define BATTERY_EMPTY_VOLTAGE 3.3f
+  #define BATTERY_FULL_VOLTAGE 4.25f
 #endif
 
 // Filters
@@ -300,7 +309,7 @@
 #define LORA_CHANGE_FINAL_DONE_CONFIRMATION_GS_FLIGHT "MUD0U_MSM"
 #define LORA_CHANGE_FINAL_DONE_CONFIRMATION_FC_FLIGHT "JUR0_JUR4D1NH0"
 #define LORA_CHANGE_FINAL_DONE_COMMUNICATION_FC_FLIGHT "B04"
-#define LORA_CHANGE_DONE_ERROR_FLIGHT "MUD4R_ERRO";
+#define LORA_CHANGE_DONE_ERROR_FLIGHT "MUD4R_ERRO"
 #endif
 
 #endif
@@ -357,7 +366,7 @@
 
 // Storage
 #if (STORAGE_MODE)
-  #define SD_SAVING_INTERVAL_MS 50 // SD card saving interval in milliseconds
+  #define SD_SAVING_INTERVAL_MS 300 // SD card saving interval in milliseconds
   #define SD_ERROR_RETRY_INTERVAL_MS 5000 // Time interval to wait before retrying SD card write after an error in milliseconds
 #endif
 
